@@ -60,6 +60,10 @@ int main(int argc, char **argv)
 
     std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive));
     Stats->print_directory_contents();
+    Stats->print_number_of_files();
+    Stats->print_number_of_lines();
+
+
 
     return 0;
 }
