@@ -26,23 +26,35 @@ using the different number of threads).
 #include <string>
 #include <filesystem>
 #include <getopt.h>
+#include <chrono>
+#include <utility>
+#include <thread>
 
+#include "ThreadPool.hpp"
 #include "DirStats.hpp"
 
 namespace fs = std::filesystem;
 
+typedef std::chrono::high_resolution_clock::time_point TPoint;
+#define TDuration(time) std::chrono::duration_cast<std::chrono::nanoseconds>(time).count()
+#define TNow() std::chrono::high_resolution_clock::now()
+
+
+
 int main(int argc, char **argv)
 {
     std::string Path = "";
-    bool Recursive = false, Err = false;
+    bool Recursive = false, MThreading = false, Err = false;
 
     int opt;
-    while ((opt = getopt(argc, argv, "p:r:")) != -1)
+    while ((opt = getopt(argc, argv, "p:rm")) != -1)
     {
         if (opt == 'p')
             Path = optarg;
         else if (opt == 'r')
-            Recursive = atoi(optarg);
+            Recursive = true;
+        else if (opt == 'm')
+            MThreading = true;            
         else
             Err = true;
     }
@@ -58,11 +70,40 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive));
-    Stats->print_directory_contents();
+
+    TPoint Start = TNow();
+
+    std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive, MThreading));
+    // Stats->print_directory_contents();
     Stats->print_number_of_files();
     Stats->print_number_of_lines();
 
+    TPoint End = TNow();
+    double ElapsedTime = TDuration(End - Start) / 1000000000.0;
+
+    std::string FinalMsg = 
+        "Program execution took " 
+        + std::to_string(ElapsedTime) + " seconds.";
+    std::cout << FinalMsg << std::endl;
+
+    // ThreadPool TPool;
+
+    // std::vector<std::future<int>> futures;
+
+    // std::vector<int> nums;
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     futures.push_back(TPool.submit(std::bind([=]{ return i; })));
+    // }
+
+    // int result = 0;
+    // for (int i = 0; i < 100; i++)
+    //     result += futures[i].get();
+
+    // std::cout << result << std::endl;
+
+    // std::sort(nums.begin(), nums.end());
+    // std::for_each(futures.begin(), futures.end(), [](std::future<int> &F){ std::cout << F.get() << std::endl; });
 
 
     return 0;

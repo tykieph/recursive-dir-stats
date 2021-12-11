@@ -4,11 +4,13 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <iostream>
 
 class FileStats
 {
 // Methods
 public:
+    FileStats(){};   
     FileStats(std::string Path);
 
     inline uint64_t get_empty_lines() { return mEmptyLines; } 

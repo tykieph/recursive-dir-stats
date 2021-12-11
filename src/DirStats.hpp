@@ -13,7 +13,7 @@ class DirStats
 {
 // Methods
 public:
-    DirStats(std::string DirectoryPath, bool Recursive);
+    DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading);
     ~DirStats();
 
     void print_directory_contents();
@@ -37,5 +37,6 @@ public:
 private:
     std::string mPath;
     bool mRecursive;
+    bool mMThreading;
     std::vector<FileStats> mFiles;
 };

@@ -1,11 +1,13 @@
 #include "DirStats.hpp"
 
+#include "ThreadPool.hpp"
+
 namespace fs = std::filesystem;
 
 
 /************************************************************/
-DirStats::DirStats(std::string DirectoryPath, bool Recursive)
-    : mPath(DirectoryPath), mRecursive(Recursive)
+DirStats::DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading)
+    : mPath(DirectoryPath), mRecursive(Recursive), mMThreading(MultiThreading)
 {
     // check if directory exists
     if (!fs::is_directory(mPath))
@@ -40,12 +42,28 @@ void DirStats::load_files()
 /************************************************************/
 void DirStats::load_files_r()
 {
+    ThreadPool TPool;
+    std::vector<std::future<FileStats>> Futures;
+
     for (const auto &Entry : fs::recursive_directory_iterator(mPath))
     {
         std::string Path = Entry.path();
-        if (fs::is_regular_file(Path))
-            mFiles.emplace_back(FileStats(Path));
+        if (mMThreading)
+        {
+            if (fs::is_regular_file(Path))
+                Futures.push_back(TPool.submit(std::bind([=]{
+                    return FileStats(Path);
+                })));
+        }
+        else
+        {
+            if (fs::is_regular_file(Path))
+                mFiles.push_back(FileStats(Path));       
+        }
+
     }
+
+    std::for_each(Futures.begin(), Futures.end(), [&](auto &F) { mFiles.push_back(F.get()); });
 }
 /************************************************************/
 void DirStats::print_dir()
