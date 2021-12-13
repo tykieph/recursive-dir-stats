@@ -12,18 +12,34 @@
 
 using TTask = std::function<void()>;
 
-class join_threads 
-{
-	std::vector<std::thread>& threads;
 
+class FunctionWrapper {
 public:
-	join_threads(std::vector<std::thread>& _threads);
-	~join_threads();
-};
+	FunctionWrapper()
+	{}
+
+	FunctionWrapper(FunctionWrapper &&other) :
+		impl(std::move(other.impl))
+	{}
+
+	FunctionWrapper(const FunctionWrapper&) = delete;
+	FunctionWrapper(FunctionWrapper&) = delete;	
+
+	template<typename F>
+	FunctionWrapper(F &&f) :
+		impl(new impl_type<F>(std::move(f)))
+	{}
 
 
-class function_wrapper {
-	struct impl_base {
+	inline void operator()() { impl->call(); }
+	FunctionWrapper &operator=(FunctionWrapper &&other)
+	{
+		impl = std::move(other.impl);
+		return *this;
+	}
+private:
+	struct impl_base 
+	{
 		virtual void call() = 0;
 		virtual ~impl_base() {}
 	};
@@ -31,36 +47,12 @@ class function_wrapper {
 	template<typename F>
 	struct impl_type : impl_base
 	{
-		F f;
-		impl_type(F&& f_) : f(std::move(f_)) {}
-		void call() { f(); }
+		F mFunc;
+		impl_type(F&& f) : mFunc(std::move(f)) {}
+		void call() { mFunc(); }
 	};
 
 	std::unique_ptr<impl_base> impl;
-
-public:
-	template<typename F>
-	function_wrapper(F&& f) :
-		impl(new impl_type<F>(std::move(f)))
-	{}
-
-	void operator()() { impl->call(); }
-
-	function_wrapper()
-	{}
-
-	function_wrapper(function_wrapper&& other) :
-		impl(std::move(other.impl))
-	{}
-
-	function_wrapper& operator=(function_wrapper&& other)
-	{
-		impl = std::move(other.impl);
-		return *this;
-	}
-
-	function_wrapper(const function_wrapper&) = delete;
-	function_wrapper(function_wrapper&) = delete;
 };
 
 
@@ -68,14 +60,21 @@ class ThreadPool
 {
 // Methods
 public:
+    ThreadPool(uint32_t Size = std::thread::hardware_concurrency())
+		: mDone(false)
+	{
+		for (uint32_t i = 0; i < Size; i++)
+			mThreads.push_back(std::thread(&ThreadPool::worker_thread, this));	
+	}
 
-    ThreadPool(uint32_t Size = std::thread::hardware_concurrency());
-    ~ThreadPool();
+    ~ThreadPool()
+	{
+    	mDone = true;	
+		join_threads();	
+	}
     
-    // std::future<typename std::result_of<TTask()>::type> submit(TTask Task);
     template<typename T>
-    // void submit(T Task)
-    std::future<typename std::result_of<T()>::type> ThreadPool::submit(T Task)
+    std::future<typename std::result_of<T()>::type> submit(T Task)
     {
         typedef typename std::result_of<T()>::type TResult;
         std::packaged_task<TResult()> PackagedTask(std::move(Task));
@@ -85,16 +84,33 @@ public:
         return Result;
     }
 private:
-    void worker_thread();
+    void worker_thread()
+	{
+		while (!mDone)
+		{
+			FunctionWrapper Task;
+			if (mQueue.try_pop(Task))
+				Task();
+			else
+				std::this_thread::yield();
+		}
+	}
+
+	void join_threads()
+	{
+		for (std::size_t i = 0; i < mThreads.size(); i++)
+		{
+			if (mThreads[i].joinable())
+				mThreads[i].join();
+		}			
+	}
 
 // Variables
 public:
 
 private:
     std::atomic_bool mDone;
-    SafeQueue<function_wrapper> mQueue;
-    std::vector<std::thread> mThreads;
-    join_threads joiner;
-    
+    SafeQueue<FunctionWrapper> mQueue;
+    std::vector<std::thread> mThreads;    
 };
 

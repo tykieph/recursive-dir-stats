@@ -21,9 +21,6 @@ public:
         mCondVar.notify_one();
     }
     
-    std::shared_ptr<T> wait_and_pop();
-    std::shared_ptr<T> try_pop();
-    void wait_and_pop(T &Value);
     bool try_pop(T &Value)
     {
         std::lock_guard<std::mutex> Lock(mMutex);
@@ -34,14 +31,19 @@ public:
         mQueue.pop();
         return true;        
     }
-    bool empty();
+
+    bool empty()
+    {
+        std::lock_guard<std::mutex> Lock(mMutex);
+        return mQueue.empty();        
+    }
 private:
     
 // Variables
 public:
 
 private:
-    mutable std::mutex mMutex;
+    std::mutex mMutex;
     std::condition_variable mCondVar;
     std::queue<std::shared_ptr<T>> mQueue;
 };

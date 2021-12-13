@@ -40,7 +40,6 @@ typedef std::chrono::high_resolution_clock::time_point TPoint;
 #define TNow() std::chrono::high_resolution_clock::now()
 
 
-
 int main(int argc, char **argv)
 {
     std::string Path = "";
@@ -74,7 +73,6 @@ int main(int argc, char **argv)
     TPoint Start = TNow();
 
     std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive, MThreading));
-    // Stats->print_directory_contents();
     Stats->print_number_of_files();
     Stats->print_number_of_lines();
 
@@ -85,26 +83,6 @@ int main(int argc, char **argv)
         "Program execution took " 
         + std::to_string(ElapsedTime) + " seconds.";
     std::cout << FinalMsg << std::endl;
-
-    // ThreadPool TPool;
-
-    // std::vector<std::future<int>> futures;
-
-    // std::vector<int> nums;
-    // for (int i = 0; i < 100; i++)
-    // {
-    //     futures.push_back(TPool.submit(std::bind([=]{ return i; })));
-    // }
-
-    // int result = 0;
-    // for (int i = 0; i < 100; i++)
-    //     result += futures[i].get();
-
-    // std::cout << result << std::endl;
-
-    // std::sort(nums.begin(), nums.end());
-    // std::for_each(futures.begin(), futures.end(), [](std::future<int> &F){ std::cout << F.get() << std::endl; });
-
 
     return 0;
 }
