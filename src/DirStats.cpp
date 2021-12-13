@@ -7,7 +7,7 @@ namespace fs = std::filesystem;
 
 /************************************************************/
 DirStats::DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading, uint32_t NmberOfThreads)
-    : mPath(DirectoryPath), mRecursive(Recursive), mMThreading(MultiThreading), mNumberOfThreads(NmberOfThreads)
+    : mPath(DirectoryPath), mRecursive(Recursive), mMThreading(MultiThreading)
 {
     // check if directory exists
     if (!this->directory_exists(DirectoryPath))
@@ -49,7 +49,7 @@ void DirStats::load_files()
         return;
     }    
 
-    ThreadPool TPool(mNumberOfThreads);
+    ThreadPool TPool;
     std::vector<std::future<FileStats>> Futures;
 
     for (const auto &Entry : fs::directory_iterator(mPath))
@@ -81,7 +81,7 @@ void DirStats::load_files_r()
         return;
     }
 
-    ThreadPool TPool(mNumberOfThreads);
+    ThreadPool TPool;
     std::vector<std::future<FileStats>> Futures;
 
     for (const auto &Entry : fs::recursive_directory_iterator(mPath))

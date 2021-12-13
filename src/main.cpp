@@ -78,12 +78,12 @@ int main(int argc, char **argv)
 
     TPoint Start = TNow();
 
-    std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive, MThreading, 0));
+    std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive, MThreading));
     
-    // Stats->print_number_of_files();
-    // Stats->print_number_of_lines();
-    // Stats->print_number_of_words();
-    // Stats->print_number_of_letters();
+    Stats->print_number_of_files();
+    Stats->print_number_of_lines();
+    Stats->print_number_of_words();
+    Stats->print_number_of_letters();
 
     TPoint End = TNow();
     double ElapsedTime = TDuration(End - Start) / 1000000000.0;
