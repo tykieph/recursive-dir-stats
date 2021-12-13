@@ -13,12 +13,20 @@ class DirStats
 {
 // Methods
 public:
-    DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading);
+    DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading, uint32_t NumberOfThreads);
     ~DirStats();
+
 
     void print_directory_contents();
     void print_number_of_files();
     void print_number_of_lines();
+    void print_number_of_words();
+    void print_number_of_letters();
+
+    uint64_t get_number_of_files();
+    uint64_t get_total_number_of_lines();
+    uint64_t get_number_of_words();
+    uint64_t get_number_of_letters();    
 private:
     uint64_t count_empty_lines();
     uint64_t count_non_empty_lines();
@@ -31,6 +39,7 @@ private:
     void load_files_r();    
     void print_dir_r();
 
+    bool directory_exists(std::string DirectoryPath);
 
 // Variables
 public:
@@ -39,4 +48,5 @@ private:
     bool mRecursive;
     bool mMThreading;
     std::vector<FileStats> mFiles;
+    uint32_t mNumberOfThreads;
 };

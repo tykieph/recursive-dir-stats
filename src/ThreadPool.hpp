@@ -63,7 +63,7 @@ public:
     ThreadPool(uint32_t Size = std::thread::hardware_concurrency())
 		: mDone(false)
 	{
-		for (uint32_t i = 0; i < Size; i++)
+		for (uint32_t i = 0; i < Size/2; i++)
 			mThreads.push_back(std::thread(&ThreadPool::worker_thread, this));	
 	}
 

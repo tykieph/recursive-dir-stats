@@ -33,6 +33,12 @@ using the different number of threads).
 #include "ThreadPool.hpp"
 #include "DirStats.hpp"
 
+#ifdef RUN_TESTS
+
+#include "gtest/gtest.h"
+
+#endif
+
 namespace fs = std::filesystem;
 
 typedef std::chrono::high_resolution_clock::time_point TPoint;
@@ -72,9 +78,12 @@ int main(int argc, char **argv)
 
     TPoint Start = TNow();
 
-    std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive, MThreading));
-    Stats->print_number_of_files();
-    Stats->print_number_of_lines();
+    std::unique_ptr<DirStats> Stats(new DirStats(Path, Recursive, MThreading, 0));
+    
+    // Stats->print_number_of_files();
+    // Stats->print_number_of_lines();
+    // Stats->print_number_of_words();
+    // Stats->print_number_of_letters();
 
     TPoint End = TNow();
     double ElapsedTime = TDuration(End - Start) / 1000000000.0;
@@ -83,6 +92,12 @@ int main(int argc, char **argv)
         "Program execution took " 
         + std::to_string(ElapsedTime) + " seconds.";
     std::cout << FinalMsg << std::endl;
+    
+#ifdef RUN_TESTS
+    ::testing::InitGoogleTest(&argc, argv);
 
+    return RUN_ALL_TESTS();
+#else
     return 0;
+#endif
 }

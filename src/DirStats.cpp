@@ -6,11 +6,11 @@ namespace fs = std::filesystem;
 
 
 /************************************************************/
-DirStats::DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading)
-    : mPath(DirectoryPath), mRecursive(Recursive), mMThreading(MultiThreading)
+DirStats::DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading, uint32_t NmberOfThreads)
+    : mPath(DirectoryPath), mRecursive(Recursive), mMThreading(MultiThreading), mNumberOfThreads(NmberOfThreads)
 {
     // check if directory exists
-    if (!fs::is_directory(mPath))
+    if (!this->directory_exists(DirectoryPath))
     {
         std::string ErrMsg = 
             "Given path doesn't point to"
@@ -30,40 +30,72 @@ DirStats::~DirStats()
 {  
 }
 /************************************************************/
+bool DirStats::directory_exists(std::string DirectoryPath)
+{
+    return fs::is_directory(DirectoryPath);
+}
+/************************************************************/
 void DirStats::load_files()
 {
+    if (!mMThreading)
+    {
+        for (const auto &Entry : fs::directory_iterator(mPath))
+        {
+            std::string Path = Entry.path();
+            if (fs::is_regular_file(Path))
+                mFiles.emplace_back(FileStats(Path));
+        }
+
+        return;
+    }    
+
+    ThreadPool TPool(mNumberOfThreads);
+    std::vector<std::future<FileStats>> Futures;
+
     for (const auto &Entry : fs::directory_iterator(mPath))
     {
         std::string Path = Entry.path();
         if (fs::is_regular_file(Path))
-            mFiles.emplace_back(FileStats(Path));
+        {
+            Futures.emplace_back(TPool.submit(std::bind([=]{
+                return FileStats(Path);
+            })));    
+        }
     }
+
+    std::for_each(Futures.begin(), Futures.end(), [&](auto &F) { mFiles.emplace_back(F.get()); });
+
 }
 /************************************************************/
 void DirStats::load_files_r()
 {
-    ThreadPool TPool;
+    if (!mMThreading)
+    {
+        for (const auto &Entry : fs::recursive_directory_iterator(mPath))
+        {
+            std::string Path = Entry.path();
+            if (fs::is_regular_file(Path))
+                mFiles.emplace_back(FileStats(Path));  
+        }
+
+        return;
+    }
+
+    ThreadPool TPool(mNumberOfThreads);
     std::vector<std::future<FileStats>> Futures;
 
     for (const auto &Entry : fs::recursive_directory_iterator(mPath))
     {
         std::string Path = Entry.path();
-        if (mMThreading)
+        if (fs::is_regular_file(Path))
         {
-            if (fs::is_regular_file(Path))
-                Futures.push_back(TPool.submit(std::bind([=]{
-                    return FileStats(Path);
-                })));
+            Futures.emplace_back(TPool.submit(std::bind([=]{
+                return FileStats(Path);
+            })));    
         }
-        else
-        {
-            if (fs::is_regular_file(Path))
-                mFiles.push_back(FileStats(Path));       
-        }
-
     }
 
-    std::for_each(Futures.begin(), Futures.end(), [&](auto &F) { mFiles.push_back(F.get()); });
+    std::for_each(Futures.begin(), Futures.end(), [&](auto &F) { mFiles.emplace_back(F.get()); });
 }
 /************************************************************/
 void DirStats::print_dir()
@@ -110,6 +142,24 @@ void DirStats::print_number_of_lines()
     std::cout << OutMsg << std::endl;
 }
 /************************************************************/
+void DirStats::print_number_of_words()
+{
+    std::string OutMsg = 
+        "Total number of words: "
+        + std::to_string(this->get_number_of_words());
+
+    std::cout << OutMsg << std::endl;
+}
+/************************************************************/
+void DirStats::print_number_of_letters()
+{
+    std::string OutMsg = 
+        "Total number of letters: "
+        + std::to_string(this->get_number_of_letters());
+
+    std::cout << OutMsg << std::endl;
+}
+/************************************************************/
 uint64_t DirStats::count_empty_lines()
 {
     return std::accumulate(
@@ -130,7 +180,34 @@ uint64_t DirStats::count_non_empty_lines()
         });
 }
 /************************************************************/
-
+uint64_t DirStats::get_number_of_files()
+{
+    return mFiles.size();
+}
 /************************************************************/
-
+uint64_t DirStats::get_total_number_of_lines()
+{
+    return std::accumulate(
+        mFiles.begin(), mFiles.end(), 0, 
+        [](uint64_t Lhs, FileStats &Rhs)
+        {
+            return Lhs + Rhs.get_non_empty_lines() + Rhs.get_empty_lines();    
+        });
+}
+/************************************************************/
+uint64_t DirStats::get_number_of_words()
+{
+    return std::accumulate(mFiles.begin(), mFiles.end(), 0, 
+        [](uint64_t Lhs, FileStats &Rhs){
+            return Lhs + Rhs.get_words();
+        });
+}
+/************************************************************/
+uint64_t DirStats::get_number_of_letters()
+{
+    return std::accumulate(mFiles.begin(), mFiles.end(), 0, 
+        [](uint64_t Lhs, FileStats &Rhs){
+            return Lhs + Rhs.get_letters();
+        });
+}
 /************************************************************/
