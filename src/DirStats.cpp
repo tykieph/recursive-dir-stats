@@ -6,7 +6,7 @@ namespace fs = std::filesystem;
 
 
 /************************************************************/
-DirStats::DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading, uint32_t NmberOfThreads)
+DirStats::DirStats(std::string DirectoryPath, bool Recursive, bool MultiThreading)
     : mPath(DirectoryPath), mRecursive(Recursive), mMThreading(MultiThreading)
 {
     // check if directory exists
