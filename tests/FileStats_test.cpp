@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "../src/FileStats.hpp"
+#include "FileStats.hpp"
 
 namespace fs = std::filesystem;
 
@@ -11,6 +11,7 @@ protected:
     void SetUp(std::string FileName)
     {
         mPath = fs::current_path();
+        mPath = mPath.parent_path();
         mPath += fs::path("/tests/Data/" + FileName);
 
         mFileStats.reset(new FileStats(mPath));
@@ -19,7 +20,7 @@ protected:
 protected:
     std::shared_ptr<FileStats> mFileStats;    
 
-    std::string mPath; // path to a testing data
+    fs::path mPath; // path to a testing data
 };
 /************************************************************/
 TEST_F(FileStatsTest, EmptyFile)
