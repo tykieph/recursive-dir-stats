@@ -33,12 +33,6 @@ using the different number of threads).
 #include "ThreadPool.hpp"
 #include "DirStats.hpp"
 
-#ifdef RUN_TESTS
-
-#include "gtest/gtest.h"
-
-#endif
-
 namespace fs = std::filesystem;
 
 typedef std::chrono::high_resolution_clock::time_point TPoint;
@@ -93,11 +87,5 @@ int main(int argc, char **argv)
         + std::to_string(ElapsedTime) + " seconds.";
     std::cout << FinalMsg << std::endl;
     
-#ifdef RUN_TESTS
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
-#else
     return 0;
-#endif
 }
